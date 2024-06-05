@@ -49,7 +49,12 @@
             siteBox = new CheckedListBox();
             label4 = new Label();
             authorBox = new CheckedListBox();
+            buttonPrevious = new Button();
+            buttonNext = new Button();
+            labelPageNumber = new Label();
+            tableLayoutPanel1 = new TableLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
             // 
             // dataGridView1
@@ -58,7 +63,7 @@
             dataGridView1.AllowUserToDeleteRows = false;
             dataGridView1.AllowUserToResizeColumns = false;
             dataGridView1.AllowUserToResizeRows = false;
-            dataGridView1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridView1.BackgroundColor = SystemColors.ControlLightLight;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridView1.Columns.AddRange(new DataGridViewColumn[] { id, name, author, price, link, genre, description, preview, site_name });
@@ -66,7 +71,7 @@
             dataGridView1.Margin = new Padding(5);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.ReadOnly = true;
-            dataGridView1.Size = new Size(1478, 421);
+            dataGridView1.Size = new Size(1476, 329);
             dataGridView1.TabIndex = 0;
             dataGridView1.CellContentClick += dataGridView1_CellContentClick;
             // 
@@ -131,13 +136,15 @@
             // 
             // preview
             // 
-            preview.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            preview.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             preview.DataPropertyName = "preview";
             preview.HeaderText = "Обложка";
+            preview.ImageLayout = DataGridViewImageCellLayout.Zoom;
             preview.Name = "preview";
             preview.ReadOnly = true;
             preview.Resizable = DataGridViewTriState.True;
             preview.SortMode = DataGridViewColumnSortMode.Automatic;
+            preview.Width = 116;
             // 
             // site_name
             // 
@@ -178,6 +185,7 @@
             from.Size = new Size(155, 33);
             from.TabIndex = 3;
             from.TextChanged += from_TextChanged;
+            from.KeyPress += from_KeyPress;
             // 
             // before
             // 
@@ -188,6 +196,7 @@
             before.Size = new Size(155, 33);
             before.TabIndex = 4;
             before.TextChanged += before_TextChanged;
+            before.KeyPress += before_KeyPress;
             // 
             // label1
             // 
@@ -274,11 +283,61 @@
             authorBox.TabIndex = 10;
             authorBox.SelectedIndexChanged += authorBox_SelectedIndexChanged;
             // 
+            // buttonPrevious
+            // 
+            buttonPrevious.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            buttonPrevious.Location = new Point(3, 3);
+            buttonPrevious.Name = "buttonPrevious";
+            buttonPrevious.Size = new Size(289, 41);
+            buttonPrevious.TabIndex = 12;
+            buttonPrevious.Text = "<<";
+            buttonPrevious.UseVisualStyleBackColor = true;
+            buttonPrevious.Click += buttonPrevious_Click;
+            // 
+            // buttonNext
+            // 
+            buttonNext.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            buttonNext.Location = new Point(1184, 3);
+            buttonNext.Name = "buttonNext";
+            buttonNext.Size = new Size(290, 41);
+            buttonNext.TabIndex = 13;
+            buttonNext.Text = ">>";
+            buttonNext.UseVisualStyleBackColor = true;
+            buttonNext.Click += buttonNext_Click;
+            // 
+            // labelPageNumber
+            // 
+            labelPageNumber.Anchor = AnchorStyles.Bottom;
+            labelPageNumber.AutoSize = true;
+            labelPageNumber.Location = new Point(680, 22);
+            labelPageNumber.Name = "labelPageNumber";
+            labelPageNumber.Size = new Size(115, 25);
+            labelPageNumber.TabIndex = 14;
+            labelPageNumber.Text = "Страница: 1";
+            // 
+            // tableLayoutPanel1
+            // 
+            tableLayoutPanel1.ColumnCount = 3;
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 19.9984016F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60.0012F));
+            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20.0004F));
+            tableLayoutPanel1.Controls.Add(buttonPrevious, 0, 0);
+            tableLayoutPanel1.Controls.Add(buttonNext, 2, 0);
+            tableLayoutPanel1.Controls.Add(labelPageNumber, 1, 0);
+            tableLayoutPanel1.Dock = DockStyle.Bottom;
+            tableLayoutPanel1.Location = new Point(0, 604);
+            tableLayoutPanel1.Name = "tableLayoutPanel1";
+            tableLayoutPanel1.RowCount = 1;
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tableLayoutPanel1.Size = new Size(1477, 47);
+            tableLayoutPanel1.TabIndex = 15;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(11F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1477, 651);
+            Controls.Add(tableLayoutPanel1);
             Controls.Add(label4);
             Controls.Add(authorBox);
             Controls.Add(label3);
@@ -298,6 +357,8 @@
             Text = "Form1";
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            tableLayoutPanel1.ResumeLayout(false);
+            tableLayoutPanel1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -307,15 +368,6 @@
         private DataGridView dataGridView1;
         private TextBox textBox1;
         private Button button_search;
-        private DataGridViewTextBoxColumn id;
-        private DataGridViewTextBoxColumn name;
-        private DataGridViewTextBoxColumn author;
-        private DataGridViewTextBoxColumn price;
-        private DataGridViewLinkColumn link;
-        private DataGridViewTextBoxColumn genre;
-        private DataGridViewTextBoxColumn description;
-        private DataGridViewImageColumn preview;
-        private DataGridViewTextBoxColumn site_name;
         private TextBox from;
         private TextBox before;
         private Label label1;
@@ -325,5 +377,18 @@
         private CheckedListBox siteBox;
         private Label label4;
         private CheckedListBox authorBox;
+        private DataGridViewTextBoxColumn id;
+        private DataGridViewTextBoxColumn name;
+        private DataGridViewTextBoxColumn author;
+        private DataGridViewTextBoxColumn price;
+        private DataGridViewLinkColumn link;
+        private DataGridViewTextBoxColumn genre;
+        private DataGridViewTextBoxColumn description;
+        private DataGridViewImageColumn preview;
+        private DataGridViewTextBoxColumn site_name;
+        private Button buttonPrevious;
+        private Button buttonNext;
+        private Label labelPageNumber;
+        private TableLayoutPanel tableLayoutPanel1;
     }
 }

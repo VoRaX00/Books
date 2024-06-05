@@ -1,10 +1,15 @@
 using MySql.Data.MySqlClient;
 using System.Data;
-
+using Aspose.Imaging;
+using System.Windows.Forms;
 namespace books
 {
     public partial class Form1 : Form
     {
+        List<Record> records;
+        int currentPage = 1;
+        int pageSize = 4;
+
         List<string> genres = new List<string>();
         List<string> sites = new List<string>();
         List<string> authors = new List<string>();
@@ -12,6 +17,7 @@ namespace books
         public Form1()
         {
             InitializeComponent();
+            dataGridView1.RowTemplate.Height = 180;
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -24,7 +30,19 @@ namespace books
             SetAuthorBox();
             SetGenresBox();
             SetSiteBox();
-            LoadRecord("");
+            LoadRecord("", currentPage, pageSize);
+        }
+
+        private void UpdateGrid()
+        {
+            int skip = (currentPage - 1) * pageSize;
+            var pageData = records.Skip(skip).Take(pageSize).ToList();
+
+            dataGridView1.DataSource = pageData;
+            labelPageNumber.Text = "$Страница: {Math.Ceiling((double)records.Count / pageSize)}";
+
+            buttonPrevious.Enabled = currentPage > 1;
+            buttonNext.Enabled = currentPage < Math.Ceiling((double)records.Count / pageSize);
         }
 
         private string lineCommand(bool textIsNull)
@@ -63,9 +81,100 @@ namespace books
             return "";
         }
 
-        public void LoadRecord(string text)
+        public void LoadRecord(string text, int pageNumber, int pageSize)
         {
             DBConnection.ConnectionDB();
+            dataGridView1.Rows.Clear();
+            var conn = DBConnection.GetConnection();
+            MySqlCommand cmd;
+
+            var listsCmd = lineCommand(string.IsNullOrEmpty(text));
+            string query;
+
+            if (string.IsNullOrEmpty(text))
+            {
+                query = $"SELECT * FROM info {listsCmd} LIMIT @pageSize OFFSET @offset";
+            }
+            else
+            {
+                query = $"SELECT * FROM info WHERE name=@text {listsCmd} LIMIT @pageSize OFFSET @offset";
+            }
+
+            cmd = new MySqlCommand(query, conn);
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                cmd.Parameters.AddWithValue("@text", text);
+            }
+
+            // Adding parameters for genres, sites, and authors
+            for (int i = 0; i < genres.Count; i++)
+            {
+                cmd.Parameters.AddWithValue("?genre" + i, genres[i]);
+            }
+            for (int i = 0; i < sites.Count; i++)
+            {
+                cmd.Parameters.AddWithValue("?site" + i, sites[i]);
+            }
+            for (int i = 0; i < authors.Count; i++)
+            {
+                cmd.Parameters.AddWithValue("?author" + i, authors[i]);
+            }
+
+            // Adding price range parameters
+            if (!string.IsNullOrEmpty(from.Text) && decimal.TryParse(from.Text, out decimal priceFrom))
+            {
+                cmd.Parameters.AddWithValue("?priceFrom", priceFrom);
+            }
+            if (!string.IsNullOrEmpty(before.Text) && decimal.TryParse(before.Text, out decimal priceTo))
+            {
+                cmd.Parameters.AddWithValue("?priceTo", priceTo);
+            }
+
+            // Adding pagination parameters
+            int offset = (pageNumber - 1) * pageSize;
+            cmd.Parameters.AddWithValue("@pageSize", pageSize);
+            cmd.Parameters.AddWithValue("@offset", offset);
+
+            var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var name = reader.GetString("name");
+                var author = reader.GetString("author");
+                var price = reader["price"].ToString();
+                var link = reader.GetString("link");
+                var genre = reader["genre"].ToString();
+                var description = reader["description"].ToString();
+                System.Drawing.Image img = null;
+                byte[] imageData = reader["preview"] == DBNull.Value ? null : (byte[])reader["preview"];
+
+                if (imageData != null && imageData.Length > 0)
+                {
+                    using (var memoryStream = new MemoryStream(imageData))
+                    {
+                        try
+                        {
+                            var image = Aspose.Imaging.Image.Load(memoryStream);
+                            var exportOptions = new Aspose.Imaging.ImageOptions.PngOptions();
+                            var ms = new MemoryStream();
+                            image.Save(ms, exportOptions);
+                            img = System.Drawing.Image.FromStream(ms);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            Console.WriteLine("Error creating image: " + ex.Message);
+                        }
+                    }
+                }
+                var site_name = reader["site_name"].ToString();
+                dataGridView1.Rows.Add(dataGridView1.Rows.Count + 1, name, author, price, link, genre, description, img, site_name);
+                dataGridView1.Invalidate();
+                dataGridView1.Update();
+            }
+
+            DBConnection.CloseDB();
+            /*DBConnection.ConnectionDB();
             dataGridView1.Rows.Clear();
             var conn = DBConnection.GetConnection();
             MySqlCommand cmd;
@@ -136,15 +245,21 @@ namespace books
                 var link = reader.GetString("link");
                 var genre = reader["genre"].ToString();
                 var description = reader["description"].ToString();
-                Image img = null;
+                System.Drawing.Image img = null;
                 byte[] imageData = reader["preview"] == DBNull.Value ? null : (byte[])reader["preview"];
+
                 if (imageData != null && imageData.Length > 0)
                 {
                     using (var memoryStream = new MemoryStream(imageData))
                     {
                         try
                         {
-                            img = Image.FromStream(memoryStream);
+                            var image = Aspose.Imaging.Image.Load(memoryStream);
+                            var exportOptions = new Aspose.Imaging.ImageOptions.PngOptions();
+                            var ms = new MemoryStream();
+                            image.Save(ms, exportOptions);
+                            img = System.Drawing.Image.FromStream(ms);
+
                         }
                         catch (ArgumentException ex)
                         {
@@ -154,15 +269,18 @@ namespace books
                 }
                 var site_name = reader["site_name"].ToString();
                 dataGridView1.Rows.Add(dataGridView1.Rows.Count + 1, name, author, price, link, genre, description, img, site_name);
+                dataGridView1.Invalidate();
+                dataGridView1.Update();
             }
 
-            DBConnection.CloseDB();
+            DBConnection.CloseDB();*/
         }
 
         private void button_search_Click(object sender, EventArgs e)
         {
             var text = textBox1.Text;
-            LoadRecord(text);
+            currentPage = 1;
+            LoadRecord(text, currentPage, pageSize);
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -233,8 +351,9 @@ namespace books
             foreach (var i in genresBox.CheckedItems)
             {
                 genres.Add(i.ToString());
+                currentPage = 1;
             }
-            LoadRecord(textBox1.Text);
+            LoadRecord(textBox1.Text, currentPage, pageSize);
         }
 
 
@@ -249,8 +368,9 @@ namespace books
             foreach (var i in authorBox.CheckedItems)
             {
                 authors.Add(i.ToString());
+                currentPage = 1;
             }
-            LoadRecord(textBox1.Text);
+            LoadRecord(textBox1.Text, currentPage, pageSize);
         }
 
         private void siteBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -259,18 +379,56 @@ namespace books
             foreach (var i in siteBox.CheckedItems)
             {
                 sites.Add(i.ToString());
+                currentPage = 1;
             }
-            LoadRecord(textBox1.Text);
+            LoadRecord(textBox1.Text, currentPage, pageSize);
         }
 
         private void from_TextChanged(object sender, EventArgs e)
         {
-            LoadRecord(textBox1.Text);
+            currentPage = 1;
+            LoadRecord(textBox1.Text, currentPage, pageSize);
         }
 
         private void before_TextChanged(object sender, EventArgs e)
         {
-            LoadRecord(textBox1.Text);
+            currentPage = 1;
+            LoadRecord(textBox1.Text, currentPage, pageSize);
+        }
+
+        private void from_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            char ch = e.KeyChar;
+            if (!Char.IsDigit(ch) && ch != 8)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void before_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            char ch = e.KeyChar;
+            if (!Char.IsDigit(ch) && ch != 8)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void buttonPrevious_Click(object sender, EventArgs e)
+        {
+            if (currentPage > 1)
+            {
+                currentPage--;
+                labelPageNumber.Text = "Страница: " + currentPage.ToString();
+                LoadRecord(textBox1.Text, currentPage, pageSize);
+            }
+        }
+
+        private void buttonNext_Click(object sender, EventArgs e)
+        {
+            currentPage++;
+            labelPageNumber.Text = "Страница: " + currentPage.ToString();
+            LoadRecord(textBox1.Text, currentPage, pageSize);
         }
     }
 }
